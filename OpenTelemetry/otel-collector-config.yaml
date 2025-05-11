@@ -1,0 +1,52 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "springboot"
+          scrape_interval: 10s
+          scrape_timeout: 5s
+          metrics_path: "/actuator/prometheus"
+          static_configs:
+            - targets: ["springboot1:8080", "springboot2:8081"]
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 50
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+    enable_open_metrics: true
+  otlp/elastic:
+    endpoint: "https://my-observability-project-ee693e.apm.eu-west-1.aws.elastic.cloud:443"
+    headers:
+      Authorization: "REkyY3E1WUJEemNDanppVks1cFg6UmUzeHpfNGc0SWJ2Y1hkQjJ5T1ZJQQ=="
+    tls:
+      insecure_skip_verify: false
+
+
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [batch]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/elastic]
+
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888

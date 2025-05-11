@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Account</title>
+</head>
+
+<body>
+<header>
+  <nav>
+    <h1>My Account</h1>
+    <ul>
+      <li><a href="#logout">Log Out</a></li>
+    </ul>
+  </nav>
+</header>
+
+<div class="user-account">
+  <div class="user-info">
+      <h2>{{ account.name }}</h2>
+      <p>Email: {{ account.email }}</p>
+  </div>
+
+  <div class="balance-card">
+      <h3>Saldo Actual</h3>
+      <p class="balance">{{ account.balance }}€</p>
+  </div>
+
+  <!--
+  <div class="payment-history">
+      <h3>Últimos Pagos</h3>
+      <ul>
+          <li *ngFor="let payment of userData.recentPayments">
+              <span>{{ payment.date }}:</span>
+              <span>{{ payment.amount }}</span>
+              <span>{{ payment.concept }}</span>
+          </li>
+      </ul>
+  </div>
+  -->
+</div>
+
+  <main>
+    <button class="btn btn-custom btn-account mt-1 py-3 px-5 font-uniform">
+      <a [routerLink]="['/payment']">Make a payment</a>
+    </button>
+    <button class="btn btn-custom btn-account mt-1 py-3 px-5 font-uniform">
+      <a [routerLink]="['/deposit']">Deposit money</a>
+    </button>
+  </main>
+</body>
+</html>

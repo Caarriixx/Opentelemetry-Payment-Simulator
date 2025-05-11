@@ -1,0 +1,75 @@
+<div class="main">
+  <button mat-fab extended (click)="goBack()" class="back-button">
+    <mat-icon>arrow_back</mat-icon>
+    Volver
+  </button>
+
+  <h1>Make a Payment</h1>
+
+  <mat-card class="user-info-card">
+    <mat-card-content>
+      <h2>{{ account.name }}</h2>
+      <p>Saldo total: <strong>{{ account.cc.balance }}</strong></p>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="card-content">
+    <mat-card-content >
+      <form [formGroup]="paymentForm" class="form">
+        <mat-form-field>
+          <mat-label>Select Recipient</mat-label>
+          <mat-select formControlName="recipient" required>
+            <mat-option *ngFor="let user of recipientUsers" [value]="user">
+              {{ user.email }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field floatLabel="always">
+          <mat-label>Amount</mat-label>
+          <input matInput
+                 formControlName="amount"
+                 type="number"
+                 class="right-align full-width"
+                 placeholder="0"
+                 required  />
+          <span matTextSuffix>€</span>
+        </mat-form-field>
+
+        <div *ngIf="paymentForm.get('amount')?.touched">
+          <p *ngIf="paymentForm.get('amount')?.hasError('maxTwoDecimals')" style="color: red;">
+            Please enter a valid amount with up to two decimal places.
+          </p>
+          <p *ngIf="paymentForm.get('amount')?.hasError('exceedsBalance')" style="color: red;">
+            The amount exceeds your current balance.
+          </p>
+        </div>
+
+        <mat-form-field>
+          <mat-label>Verification</mat-label>
+          <input matInput
+                 formControlName="verification"
+                 class="full-width"
+                 id="verification"
+                 type="text"
+                 name="verification"
+                 required />
+        </mat-form-field>
+
+        <div *ngIf="paymentForm.get('verification')?.errors?.['minlength'] && paymentForm.get('verification')?.touched">
+          <p style="color: red;">Password must be at least 6 characters long.</p>
+        </div>
+
+        <button mat-fab extended (click)="onSubmit()" class="back-button full-width">
+          <mat-icon>done</mat-icon>
+          Confirm Payment
+        </button>
+
+        <button mat-button (click)="generarCodigo()">Generar Código</button>
+      </form>
+
+    </mat-card-content>
+  </mat-card>
+
+
+</div>

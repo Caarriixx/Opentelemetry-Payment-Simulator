@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deposit Money</title>
+  <link rel="stylesheet" href="/app/deposit/deposit.component.css">
+  <script>
+    function validateDeposit() {
+      const amountInput = document.getElementById("deposit-amount");
+      const passwordInput = document.getElementById("password");
+      const amount = parseFloat(amountInput.value);
+
+      if (isNaN(amount) || amount <= 0) {
+        alert("Please enter a valid amount.");
+        return false;
+      }
+
+      if (passwordInput.value === "") {
+        alert("Please enter your password.");
+        return false;
+      }
+
+      // If all validations pass, proceed with the deposit
+      alert("Deposit confirmed.");
+      return true;
+    }
+  </script>
+</head>
+
+<body>
+<!-- Botón Volver Hacia Atrás -->
+<div class="back-button">
+  <button (click)="goBack()" class="btn btn-light">
+    &#8592; Back to Account
+  </button>
+</div>
+<header>
+  <h1>Deposit Money</h1>
+</header>
+
+<main>
+  <section id="deposit-info">
+    <h2>Your Account Balance: €{{ account.balance }}</h2>
+    <h3>Account holder: {{ account.name }}</h3>
+    <p>Email: {{ account.email }}</p>
+
+    <form [formGroup]="depositForm" (ngSubmit)="onSubmit()">
+      <!-- Campo de monto -->
+      <label for="deposit-amount">Amount to Deposit:</label>
+      <input type="number" id="deposit-amount" formControlName="amount" required placeholder="Enter amount">
+      <div *ngIf="depositForm.get('amount')?.hasError('maxTwoDecimals') && depositForm.get('amount')?.touched">
+        <p style="color: red;">Please enter a valid amount with up to two decimal places.</p>
+      </div>
+      <br><br>
+
+      <!-- Campo de contraseña -->
+      <label for="password">Password:</label>
+      <input type="password" id="password" formControlName="password" required placeholder="Enter your password">
+      <div *ngIf="depositForm.get('password')?.errors?.['minlength'] && depositForm.get('password')?.touched">
+        <p style="color: red;">Password must be at least 6 characters long.</p>
+      </div>
+      <br><br>
+
+      <!-- Botón para confirmar el depósito -->
+      <div class="confirmPayment-button">
+        <button type="submit" [disabled]="depositForm.invalid">Confirm deposit</button>
+      </div>
+    </form>
+  </section>
+</main>
+</body>
+
+</html>

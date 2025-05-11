@@ -1,0 +1,34 @@
+{
+  "name": "Alice",
+  "surname": "Doe",
+  "email": "alice@example.com",
+  "password": "password123",
+  "dni": "12345678A",
+  "cc": {
+    "balance": 1000.0
+  }
+}
+
+{
+  "name": "Paco",
+  "surname": "Fernandez",
+  "email": "paco@example.com",
+  "password": "paco123",
+  "dni": "12345678B",
+  "cc": {
+    "balance": 500.0
+  }
+}
+
+{
+  "name": "Armando",
+  "surname": "Jaleo",
+  "email": "armandojaleo@example.com",
+  "password": "armando123",
+  "dni": "12345678C",
+  "cc": {
+    "balance": 200.0
+  }
+}
+
+

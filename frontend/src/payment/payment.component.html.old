@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment</title>
+  <link rel="stylesheet" href="/app/payment/payment.component.css">
+</head>
+
+<body>
+
+<!-- Botón Volver Hacia Atrás -->
+<div class="back-button">
+  <button (click)="goBack()" class="btn btn-light">
+    &#8592; Back to Account
+  </button>
+</div>
+
+<header>
+  <h1>Make a Payment</h1>
+</header>
+
+<main>
+  <section id="payment-info">
+    <h2>Your Account Balance: €{{ account.balance }}</h2>
+
+    <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+      <label for="recipient">Select Recipient:</label>
+      <select id="recipient" formControlName="recipient" required>
+        <option value="">--Select Account--</option>
+        <option value="account1">Account1</option>
+        <option value="account2">Account2</option>
+        <option value="account3">Account3</option>
+      </select>
+      <br><br>
+
+      <label for="amount">Amount to Pay:</label>
+      <input type="number" id="amount" formControlName="amount" required placeholder="Enter amount">
+      <div *ngIf="paymentForm.get('amount')?.touched">
+        <p *ngIf="paymentForm.get('amount')?.hasError('maxTwoDecimals')" style="color: red;">
+          Please enter a valid amount with up to two decimal places.
+        </p>
+        <p *ngIf="paymentForm.get('amount')?.hasError('exceedsBalance')" style="color: red;">
+          The amount exceeds your current balance.
+        </p>
+      </div>
+
+      <br><br>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" formControlName="password" required placeholder="Enter your password">
+      <div *ngIf="paymentForm.get('password')?.errors?.['minlength'] && paymentForm.get('password')?.touched">
+        <p style="color: red;">Password must be at least 6 characters long.</p>
+      </div>
+      <br><br>
+
+      <button type="submit" [disabled]="paymentForm.invalid">Confirm Payment</button>
+    </form>
+  </section>
+</main>
+
+</body>
+
+</html>

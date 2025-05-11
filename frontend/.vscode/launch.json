@@ -1,0 +1,50 @@
+{
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+  {
+    "name": "(gdb) Attach",
+    "type": "cppdbg",
+    "request": "attach",
+    "program": "enter program name, for example ${workspaceFolder}/a.exe",
+    "MIMode": "gdb",
+    "miDebuggerPath": "/path/to/gdb",
+    "setupCommands": [
+        {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+        },
+        {
+            "description": "Set Disassembly Flavor to Intel",
+            "text": "-gdb-set disassembly-flavor intel",
+            "ignoreFailures": true
+        }
+    ]
+  },
+    {
+      "name": "ng serve",
+      "type": "chrome",
+      "request": "launch",
+      "preLaunchTask": "npm: start",
+      "url": "http://localhost:4200/"
+    },
+    {
+      "name": "ng test",
+      "type": "chrome",
+      "request": "launch",
+      "preLaunchTask": "npm: test",
+      "url": "http://localhost:9876/debug.html"
+    },
+    {
+      "name": "Win32",
+      "includePath": [
+        "C:/MinGW/include",
+        "C:/Program Files/winlibs-x86_64-posix-seh-gcc-14.2.0-llvm-19.1.7-mingw-w64ucrt-12.0.0-r3/mingw64/lib/gcc/x86_64-w64-mingw32/14.2.0/include"
+      ],
+      "intelliSenseMode": "windows-gcc-x64",
+      "compilerPath": "C:/MinGW/bin/gcc.exe"
+    }
+    
+  ]
+}

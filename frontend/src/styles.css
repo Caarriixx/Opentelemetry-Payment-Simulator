@@ -1,0 +1,10 @@
+/* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* src/styles.css o src/app/manage-users/manage-users.component.css */
+mat-form-field {
+    width: 100%;
+  }
+  

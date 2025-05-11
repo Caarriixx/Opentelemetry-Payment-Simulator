@@ -1,0 +1,156 @@
+<!-- <div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-4">
+      <h3 class="text-center text-accent">Login</h3>
+      <form
+        name="form"
+        (ngSubmit)="f.form.valid && onSubmit()"
+        #f="ngForm"
+        novalidate
+      >
+        <div
+          class="form-group"
+          style="
+            font-family: 'Times New Roman', Times, serif;
+            font-weight: bold;
+          "
+        >
+          <label for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            class="form-control"
+            name="username"
+            [(ngModel)]="form.username"
+            #username="ngModel"
+            required
+          />
+          <div *ngIf="f.submitted && username.invalid" class="text-danger mt-1">
+            <div *ngIf="username.errors?.['required']">
+              Username is required
+            </div>
+          </div>
+        </div>
+        <div
+          class="form-group"
+          style="
+            font-family: 'Times New Roman', Times, serif;
+            font-weight: bold;
+          "
+        >
+          <label for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="form-control"
+            name="password"
+            [(ngModel)]="form.password"
+            #password="ngModel"
+            required
+            minlength="6"
+          />
+          
+          <div *ngIf="f.submitted && password.invalid" class="text-danger mt-1">
+            <div *ngIf="password.errors?.['required']">
+              Password is required
+            </div>
+            <div *ngIf="password.errors?.['minlength']">
+              Password must be at least 6 characters
+            </div>
+          </div>
+        </div>
+        <div class="form-group text-center">
+          <button
+            type="submit"
+            class="btn btn-primary btn-accent"
+            style="font-family: 'Times New Roman', Times, serif"
+          >
+            Login
+          </button>
+          <div
+            *ngIf="f.submitted && isLoginFailed"
+            class="alert alert-danger mt-3"
+          >
+            Login failed: {{ errorMessage }}
+          </div>
+        </div>
+      </form>
+
+      
+      
+
+    </div>
+  </div>
+</div> -->
+<mat-card appearance="outlined" style="text-align: center;">
+  
+  <mat-card-header>Login</mat-card-header>
+
+  <mat-card-content>
+    <form
+      name="form"
+      (ngSubmit)="f.form.valid && onSubmit()"
+      #f="ngForm"
+      novalidate>
+      <mat-form-field>
+        <mat-label>Username</mat-label>
+        <input 
+          matInput
+          class="full-width"
+          id="username"
+          type="text"
+          name="username"
+          [(ngModel)]="form.username"
+          #username="ngModel"
+          required>
+      </mat-form-field>
+      <div *ngIf="f.submitted && username.invalid" class="text-danger mt-1">
+        <div *ngIf="username.errors?.['required']">
+          Username is required
+        </div>
+      </div>
+      <br>
+      <mat-form-field>
+        <mat-label>Password</mat-label>
+        <input matInput
+          class="full-width"
+          id="password"
+          type="password"
+          class="form-control"
+          name="password"
+          [(ngModel)]="form.password"
+          #password="ngModel"
+          required
+          [type]="hide() ? 'password' : 'text'" />
+          
+  
+        <button
+          mat-icon-button
+          matSuffix
+          type="button"
+          (click)="clickEvent($event)"
+          [attr.aria-label]="'Hide password'"
+          [attr.aria-pressed]="hide()"
+        >
+          <mat-icon>{{hide() ? 'visibility_off' : 'visibility'}}</mat-icon>
+        </button>
+      </mat-form-field>
+      <div *ngIf="f.submitted && password.invalid" class="text-danger mt-1">
+        <div *ngIf="password.errors?.['required']">
+          Password is required
+        </div>
+        <div *ngIf="password.errors?.['minlength']">
+          Password must be at least 6 characters
+        </div>
+      </div>
+      <br>
+      <button mat-flat-button type="submit">Login</button>
+    </form>
+    <div
+            *ngIf="f.submitted && isLoginFailed"
+            class="alert alert-danger mt-3"
+          >
+            Login failed {{ errorMessage }}
+          </div>
+  </mat-card-content>
+</mat-card>

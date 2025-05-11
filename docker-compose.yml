@@ -1,0 +1,124 @@
+# version: '3.8'  # Define la versión de docker-compose
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.0.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ports:
+      - "9200:9200"  # API REST de Elasticsearch
+      - "9300:9300"  # Comunicación entre nodos
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    networks:
+      - mynetwork
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.0.0
+    container_name: kibana
+    ports:
+      - "5601:5601"  # Interfaz de Kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    networks:
+      - mynetwork
+
+  rabbitmq:
+    image: rabbitmq:3.10.0-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"  # Conexiones AMQP
+      - "15672:15672"  # Consola de administración de RabbitMQ
+    networks:
+      - mynetwork
+
+  mysql:
+    image: mysql:8.4.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: simulador_pagos
+      # MYSQL_USER: root
+      # MYSQL_PASSWORD: root
+    ports:
+      - "3307:3306"  # Puerto MySQL
+    volumes:
+      - mysqldata:/var/lib/mysql
+    networks:
+      - mynetwork
+
+  centroautorizador:
+    build:
+      context: ./backend/centroautorizador
+    container_name: centroautorizador
+    environment:
+      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/simulador_pagos
+      SPRING_DATASOURCE_PORT: 3306
+      SPRING_DATASOURCE_HOST: mysql
+      SPRING_DATASOURCE_DDBB: simulador_pagos
+      # SPRING_DATASOURCE_USERNAME: root
+      # SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_ELASTICSEARCH_HOST: elasticsearch
+      # SPRING_ELASTICSEARCH_REST_URIS: http://elasticsearch:9200
+    ports:
+      - "8082:8082"
+    depends_on:
+      - elasticsearch
+      - rabbitmq
+      - mysql
+    networks:
+      - mynetwork
+    
+      # Segundo proyecto Spring Boot adicional
+  backend:
+    build:
+      context: ./backend/springboot1/SimuladorPagos
+    container_name: backend
+    environment:
+      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/simulador_pagos
+      SPRING_DATASOURCE_PORT: 3306
+      SPRING_DATASOURCE_HOST: mysql
+      SPRING_DATASOURCE_DDBB: simulador_pagos
+      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/simulador_pagos
+      # SPRING_DATASOURCE_USERNAME: root
+      # SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_ELASTICSEARCH_HOST: elasticsearch
+      # SPRING_ELASTICSEARCH_REST_URIS: http://elasticsearch:9200
+    ports:
+      - "8080:8080"  # Puerto para el segundo Spring Boot
+    depends_on:
+      - elasticsearch
+      - rabbitmq
+      - mysql
+    networks:
+      - mynetwork
+
+  # Servicio adicional para el proyecto Angular
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "4200:4200"  # Puerto para servir la aplicación Angular
+    networks:
+      - mynetwork
+    depends_on:
+      - backend
+
+
+volumes:
+  esdata:
+  mysqldata:
+
+networks:
+  mynetwork:
+    driver: bridge

@@ -1,0 +1,15 @@
+.footer {
+    /* position: fixed;       Fija el footer en la posición */
+    bottom: 0;             /* Pega el footer al fondo de la ventana */
+    left: 0;               /* Alinea el footer al lado izquierdo */
+    width: 100%;           /* Ocupa todo el ancho de la ventana */
+    background-color: #333; /* Color de fondo (ajústalo según tu diseño) */
+    color: white;          /* Color de texto */
+    text-align: center;    /* Centra el contenido del footer */
+    padding: 10px 0;       /* Espaciado vertical */
+}
+  
+.footer-content {
+max-width: 1200px;     /* Ancho máximo del contenido */
+margin: auto;          /* Centra el contenido */
+}

@@ -1,0 +1,72 @@
+.back-button {
+  /* position: absolute; */
+  /* top: 5rem;  Baja el botón más abajo del borde superior */
+  /* left: 20px; Ajusta la posición hacia la derecha si es necesario */
+  z-index: 1000; /* Asegura que esté por encima de otros elementos */
+}
+
+header {
+  margin-top: 100px;  /* Aumenta el margen superior para dar espacio al botón */
+  text-align: center;
+}
+
+form {
+  margin-top: 20px; /* Añade margen para dar espacio al formulario */
+}
+
+button[type="submit"] {
+  margin-top: 20px; /* Añade un margen superior para el botón de confirmar */
+}
+
+
+.btn-light {
+  padding: 10px 20px; /* Ajusta el tamaño del botón si es necesario */
+  font-size: 16px; /* Ajusta el tamaño del texto */
+}
+
+.user-info-card {
+  /* position: absolute; */
+  /* top: 3rem;
+  left: 40%; */
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.card-content{
+  max-width: 25%;
+  /* left: 50vw; */
+  /* right: 50%; */
+  /* top: 7rem; */
+}
+
+.main{
+  height: 90vh;
+  width: 90vw;
+  margin: auto;
+
+}
+
+.right-align {
+  text-align: right;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield; /* Eliminar flechas en Firefox */
+  -webkit-appearance: none;  /* Eliminar flechas en Chrome/Safari */
+  appearance: none;          /* General */
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0; /* Opcional: eliminar margen */
+}
