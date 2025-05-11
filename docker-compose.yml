@@ -1,124 +1,222 @@
-# version: '3.8'  # Define la versión de docker-compose
 
 services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./OpenTelemetry/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  otel-collector:
+    image: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib:latest
+    container_name: otel-collector
+    networks:
+      - monitoring
+    volumes:
+      - ./OpenTelemetry/otel-collector-config.yaml:/etc/otelcol/config.yaml
+    command: ["--config", "/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "9464:9464"
+      - "8888:8888"
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: simulador_pagos
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - monitoring
+    ports:
+    - "3308:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  springboot1:
+    build:
+      context: ./backend/springboot1/SimuladorPagos
+    container_name: springboot1
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - monitoring
+    restart: on-failure
+    #volumes:
+    #  - ./OpenTelemetry/elastic-apm-agent.jar:/elastic-apm-agent.jar
+    #environment:
+     # - JAVA_TOOL_OPTIONS=-javaagent:/elastic-apm-agent.jar
+      #- ELASTIC_APM_SERVICE_NAME=simulador-pagos
+      #- ELASTIC_APM_SERVER_URLS=https://my-observability-project-ee693e.apm.eu-west-1.aws.elastic.cloud:443
+      #- ELASTIC_APM_API_KEY=REkyY3E1WUJEemNDanppVks1cFg6UmUzeHpfNGc0SWJ2Y1hkQjJ5T1ZJQQ==
+      #- ELASTIC_APM_ENVIRONMENT=development
+      #- ELASTIC_APM_VERIFY_SERVER_CERT=false
+    volumes:
+      - ./OpenTelemetry/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar
+    environment:
+      - JAVA_TOOL_OPTIONS=-javaagent:/otel/opentelemetry-javaagent.jar
+      - JAVA_TOOL_OPTIONS=-Dotel.instrumentation.common.experimental-span-attributes=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_SPAN_ATTRIBUTES=true
+
+  springboot2:
+    build:
+      context: ./backend/centroautorizador
+    container_name: springboot2
+    ports:
+      - "8081:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - monitoring
+    restart: on-failure
+    #volumes:
+     # - ./OpenTelemetry/elastic-apm-agent.jar:/elastic-apm-agent.jar
+    #environment:
+    #  - JAVA_TOOL_OPTIONS=-javaagent:/elastic-apm-agent.jar
+     # - ELASTIC_APM_SERVICE_NAME=centro-autorizador
+     # - ELASTIC_APM_SERVER_URLS=https://my-observability-project-ee693e.apm.eu-west-1.aws.elastic.cloud:443
+     # - ELASTIC_APM_API_KEY=REkyY3E1WUJEemNDanppVks1cFg6UmUzeHpfNGc0SWJ2Y1hkQjJ5T1ZJQQ==
+     # - ELASTIC_APM_ENVIRONMENT=development
+     # - ELASTIC_APM_VERIFY_SERVER_CERT=false
+    volumes:
+      - ./OpenTelemetry/opentelemetry-javaagent.jar:/otel/opentelemetry-javaagent.jar
+    environment:
+      - JAVA_TOOL_OPTIONS=-javaagent:/otel/opentelemetry-javaagent.jar
+      - JAVA_TOOL_OPTIONS=-Dotel.instrumentation.common.experimental-span-attributes=true
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_LOGS_EXPORTER=none
+      - OTEL_INSTRUMENTATION_COMMON_EXPERIMENTAL_SPAN_ATTRIBUTES=true
+
+  rabbitmq:
+    image: rabbitmq:3.10-management
+    container_name: rabbitmq
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.0.0
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - xpack.security.enabled=false
-      - xpack.security.transport.ssl.enabled=false
+      - xpack.monitoring.collection.enabled=true
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     ports:
-      - "9200:9200"  # API REST de Elasticsearch
-      - "9300:9300"  # Comunicación entre nodos
-    volumes:
-      - esdata:/usr/share/elasticsearch/data
+      - "9200:9200"
+      - "9300:9300"
     networks:
-      - mynetwork
+      - monitoring
+    volumes:
+    - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.0.0
     container_name: kibana
     ports:
-      - "5601:5601"  # Interfaz de Kibana
+      - "5601:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
     networks:
-      - mynetwork
+      - monitoring
 
-  rabbitmq:
-    image: rabbitmq:3.10.0-management
-    container_name: rabbitmq
+  jaeger:
+    image: jaegertracing/all-in-one:1.47
+    container_name: jaeger
     ports:
-      - "5672:5672"  # Conexiones AMQP
-      - "15672:15672"  # Consola de administración de RabbitMQ
+      - "16686:16686"
+      - "14250:14250"
     networks:
-      - mynetwork
+      - monitoring
 
-  mysql:
-    image: mysql:8.4.0
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: simulador_pagos
-      # MYSQL_USER: root
-      # MYSQL_PASSWORD: root
-    ports:
-      - "3307:3306"  # Puerto MySQL
-    volumes:
-      - mysqldata:/var/lib/mysql
-    networks:
-      - mynetwork
+  #apm-server:
+    #image: docker.elastic.co/apm/apm-server:8.0.1
+    #container_name: apm-server
+    #depends_on:
+      #elasticsearch:
+        #condition: service_healthy
+   # ports:
+      #- "8200:8200"  # <- dejarlo así para que sea accesible desde fuera
+      #- "8201:8201"  # <- añadir este para OTLP gRPC
 
-  centroautorizador:
-    build:
-      context: ./backend/centroautorizador
-    container_name: centroautorizador
-    environment:
-      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/simulador_pagos
-      SPRING_DATASOURCE_PORT: 3306
-      SPRING_DATASOURCE_HOST: mysql
-      SPRING_DATASOURCE_DDBB: simulador_pagos
-      # SPRING_DATASOURCE_USERNAME: root
-      # SPRING_DATASOURCE_PASSWORD: root
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_ELASTICSEARCH_HOST: elasticsearch
-      # SPRING_ELASTICSEARCH_REST_URIS: http://elasticsearch:9200
-    ports:
-      - "8082:8082"
-    depends_on:
-      - elasticsearch
-      - rabbitmq
-      - mysql
-    networks:
-      - mynetwork
-    
-      # Segundo proyecto Spring Boot adicional
-  backend:
-    build:
-      context: ./backend/springboot1/SimuladorPagos
-    container_name: backend
-    environment:
-      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/simulador_pagos
-      SPRING_DATASOURCE_PORT: 3306
-      SPRING_DATASOURCE_HOST: mysql
-      SPRING_DATASOURCE_DDBB: simulador_pagos
-      # SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3307/simulador_pagos
-      # SPRING_DATASOURCE_USERNAME: root
-      # SPRING_DATASOURCE_PASSWORD: root
-      SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_ELASTICSEARCH_HOST: elasticsearch
-      # SPRING_ELASTICSEARCH_REST_URIS: http://elasticsearch:9200
-    ports:
-      - "8080:8080"  # Puerto para el segundo Spring Boot
-    depends_on:
-      - elasticsearch
-      - rabbitmq
-      - mysql
-    networks:
-      - mynetwork
-
-  # Servicio adicional para el proyecto Angular
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: frontend
-    ports:
-      - "4200:4200"  # Puerto para servir la aplicación Angular
-    networks:
-      - mynetwork
-    depends_on:
-      - backend
+    #networks:
+      #- monitoring
+    #environment:
+      #- ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      #- apm-server.host=0.0.0.0:8200
+      #- apm-server.kibana.enabled=false
+      #- output.elasticsearch.enabled=true
+      #- output.elasticsearch.hosts=["http://elasticsearch:9200"]
+      #- apm-server.otlp.enabled=true
+      #- apm-server.otlp.grpc.enabled=true
+      #- apm-server.otlp.enabled=true
+     # - apm-server.otlp.grpc.endpoint=0.0.0.0:8201
 
 
-volumes:
-  esdata:
-  mysqldata:
 
 networks:
-  mynetwork:
+  monitoring:
     driver: bridge
+
+volumes:
+  mysql_data:
+  esdata:

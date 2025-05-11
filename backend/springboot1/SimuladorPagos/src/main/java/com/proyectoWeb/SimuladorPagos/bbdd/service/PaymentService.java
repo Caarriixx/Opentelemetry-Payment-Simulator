@@ -14,24 +14,24 @@ import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.common.Attributes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.Span;
-import co.elastic.apm.api.ElasticApm;
-import co.elastic.apm.api.Span;
-import co.elastic.apm.api.Transaction;
 
 import java.util.*;
+
 
 @Service
 public class PaymentService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PaymentService.class);
     // Usamos el tracer global, conectado al javaagent de Elastic APM
-    private static final Tracer tracer =
-            GlobalOpenTelemetry.getTracer("simulador-pagos");
+    private final Tracer tracer =
+            GlobalOpenTelemetry.getTracer("make-payment");
 
     private final PaymentRepository paymentRepository;
     private final StateService stateService;
@@ -54,17 +54,25 @@ public class PaymentService {
 
     public void insertPayment(PaymentMessage paymentMessage) {
         // Iniciamos el span con el tracer global
-        Span span = tracer.spanBuilder("insert-payment").startSpan();
+        Span span = tracer.spanBuilder("Insert Payment")
+                .setAttribute("custom.sender.id", paymentMessage.getSender().getId())
+                .setAttribute("custom.receiver.id", paymentMessage.getReceiver().getId())
+                .setAttribute("custom.amount", paymentMessage.getAmount())
+                .setAttribute("custom.state", paymentMessage.getState())
+                .startSpan();
+
         try (Scope scope = span.makeCurrent()) {
             String traceId = span.getSpanContext().getTraceId();
             MDC.put("traceId", traceId);
 
-            span.setAttribute("sender.id", paymentMessage.getSender().getId());
-            span.setAttribute("receiver.id", paymentMessage.getReceiver().getId());
-            span.setAttribute("amount", paymentMessage.getAmount());
-            span.setAttribute("state", paymentMessage.getState());
+            span.addEvent("Payment request received");
+
+            span.setAttribute("custom.sender.id", paymentMessage.getSender().getId());
+            span.setAttribute("custom.receiver.id", paymentMessage.getReceiver().getId());
+            span.setAttribute("custom.amount", paymentMessage.getAmount());
+            span.setAttribute("custom.state", paymentMessage.getState());
             if (paymentMessage.getDate() != null) {
-                span.setAttribute("date", paymentMessage.getDate().toString());
+                span.setAttribute("custom.date", paymentMessage.getDate().toString());
             }
 
             LOGGER.info("📥 Procesando pago con estado {}", paymentMessage.getState());
@@ -130,4 +138,3 @@ public class PaymentService {
             }
         }
     }*/
-

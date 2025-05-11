@@ -5,7 +5,6 @@ receivers:
         endpoint: "0.0.0.0:4317"
       http:
         endpoint: "0.0.0.0:4318"
-
   prometheus:
     config:
       scrape_configs:
@@ -25,13 +24,13 @@ exporters:
   prometheus:
     endpoint: "0.0.0.0:9464"
     enable_open_metrics: true
+
   otlp/elastic:
     endpoint: "https://my-observability-project-ee693e.apm.eu-west-1.aws.elastic.cloud:443"
     headers:
-      Authorization: "REkyY3E1WUJEemNDanppVks1cFg6UmUzeHpfNGc0SWJ2Y1hkQjJ5T1ZJQQ=="
+      Authorization: "ApiKey REkyY3E1WUJEemNDanppVks1cFg6UmUzeHpfNGc0SWJ2Y1hkQjJ5T1ZJQQ=="
     tls:
       insecure_skip_verify: false
-
 
   debug:
     verbosity: detailed
@@ -49,4 +48,4 @@ service:
 
   telemetry:
     metrics:
-      address: 0.0.0.0:8888
+      address: "0.0.0.0:8888"

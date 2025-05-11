@@ -8,14 +8,13 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="centroautorizador" />
+        <module name="SimuladorPagos" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="SimuladorPagos" target="17" />
-    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="SimuladorPagos" options="-parameters" />
       <module name="centroautorizador" options="-parameters" />
     </option>
   </component>

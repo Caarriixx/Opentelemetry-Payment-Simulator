@@ -19,7 +19,7 @@ import org.springframework.core.ParameterNameDiscoverer;
 
 @Configuration
 public class OpenTelemetryConfig {
-/*
+    /*
     @Bean
     public OpenTelemetry openTelemetry() {
         // 🔄 Crea el span exporter apuntando al collector dentro del contenedor
@@ -45,7 +45,7 @@ public class OpenTelemetryConfig {
                 .setTracerProvider(tracerProvider)
                 .build();
     }
-*/
+    */
     @Bean
     public Tracer tracer(OpenTelemetry openTelemetry) {
         return openTelemetry.getTracer("simulador-pagos");
