@@ -29,6 +29,7 @@ exporters:
     endpoint: "https://my-observability-project-ee693e.apm.eu-west-1.aws.elastic.cloud:443"
     headers:
       Authorization: "ApiKey REkyY3E1WUJEemNDanppVks1cFg6UmUzeHpfNGc0SWJ2Y1hkQjJ5T1ZJQQ=="
+    ingest_pipeline: "parse_custom_date"
     tls:
       insecure_skip_verify: false
 

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/proyecto-xeridia.iml" filepath="$PROJECT_DIR$/.idea/proyecto-xeridia.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Proyecto-Opentelemetry.iml" filepath="$PROJECT_DIR$/.idea/Proyecto-Opentelemetry.iml" />
     </modules>
   </component>
 </project>

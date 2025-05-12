@@ -72,7 +72,8 @@ public class PaymentService {
             span.setAttribute("custom.amount", paymentMessage.getAmount());
             span.setAttribute("custom.state", paymentMessage.getState());
             if (paymentMessage.getDate() != null) {
-                span.setAttribute("custom.date", paymentMessage.getDate().toString());
+                long epochMillis = paymentMessage.getDate().getTime();
+                span.setAttribute(AttributeKey.longKey("custom.date.epochMillis"), epochMillis);
             }
 
             LOGGER.info("📥 Procesando pago con estado {}", paymentMessage.getState());
