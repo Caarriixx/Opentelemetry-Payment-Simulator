@@ -17,6 +17,8 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
+    volumes:
+      - grafana-storage:/var/lib/grafana
     networks:
       - monitoring
 
@@ -218,3 +220,4 @@ networks:
 volumes:
   mysql_data:
   esdata:
+  grafana-storage:

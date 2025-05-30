@@ -53,62 +53,100 @@ public class PaymentService {
     }
 
     public void insertPayment(PaymentMessage paymentMessage) {
-        // Iniciamos el span con el tracer global
         Span span = tracer.spanBuilder("Insert Payment")
-                .setAttribute("custom.sender.id", paymentMessage.getSender().getId())
-                .setAttribute("custom.receiver.id", paymentMessage.getReceiver().getId())
-                .setAttribute("custom.amount", paymentMessage.getAmount())
-                .setAttribute("custom.state", paymentMessage.getState())
+                .setAttribute("payment.sender.id", paymentMessage.getSender().getId())
+                .setAttribute("payment.receiver.id", paymentMessage.getReceiver().getId())
+                .setAttribute("payment.amount", paymentMessage.getAmount())
+                .setAttribute("payment.state", paymentMessage.getState())
                 .startSpan();
 
         try (Scope scope = span.makeCurrent()) {
             String traceId = span.getSpanContext().getTraceId();
             MDC.put("traceId", traceId);
-
             span.addEvent("Payment request received");
 
-            span.setAttribute("custom.sender.id", paymentMessage.getSender().getId());
-            span.setAttribute("custom.receiver.id", paymentMessage.getReceiver().getId());
-            span.setAttribute("custom.amount", paymentMessage.getAmount());
-            span.setAttribute("custom.state", paymentMessage.getState());
-            if (paymentMessage.getDate() != null) {
-                long epochMillis = paymentMessage.getDate().getTime();
-                span.setAttribute(AttributeKey.longKey("custom.date.epochMillis"), epochMillis);
+            // Validar amount > 0
+            if (paymentMessage.getAmount() <= 0) {
+                span.setStatus(StatusCode.ERROR, "Amount must be greater than 0");
+                span.setAttribute("payment.error", "invalid_amount");
+                throw new IllegalArgumentException("Amount must be greater than 0.");
             }
 
-            LOGGER.info("📥 Procesando pago con estado {}", paymentMessage.getState());
+            // Validar fecha
+            if (paymentMessage.getDate() == null) {
+                span.setStatus(StatusCode.ERROR, "Missing or invalid date");
+                span.setAttribute("payment.error", "invalid_date");
+                throw new IllegalArgumentException("Payment must include a valid date.");
+            }
 
+            span.setAttribute(AttributeKey.longKey("payment.date.epochMillis"), paymentMessage.getDate().getTime());
+
+            // Validar existencia de sender y receiver
+            Optional<User> senderOpt = Optional.ofNullable(paymentMessage.getSender());
+            Optional<User> receiverOpt = Optional.ofNullable(paymentMessage.getReceiver());
+
+            if (senderOpt.isEmpty() || senderOpt.get().getId() == null) {
+                span.setStatus(StatusCode.ERROR, "Sender not provided");
+                span.setAttribute("payment.error", "sender_missing");
+                throw new IllegalArgumentException("Sender must be provided.");
+            }
+
+            if (receiverOpt.isEmpty() || receiverOpt.get().getId() == null) {
+                span.setStatus(StatusCode.ERROR, "Receiver not provided");
+                span.setAttribute("payment.error", "receiver_missing");
+                throw new IllegalArgumentException("Receiver must be provided.");
+            }
+
+            User sender = senderOpt.get();
+            User receiver = receiverOpt.get();
+
+            // Validar estado entre 0 y 4
+            if (paymentMessage.getState() < 0 || paymentMessage.getState() > 4) {
+                span.setStatus(StatusCode.ERROR, "Invalid payment state");
+                span.setAttribute("payment.error", "invalid_state");
+                throw new IllegalArgumentException("State must be between 0 and 4.");
+            }
+
+            // Validar que el sender tiene saldo suficiente
+            if (sender.getCc() == null || sender.getCc().getBalance() < paymentMessage.getAmount()) {
+                span.setStatus(StatusCode.ERROR, "Insufficient balance");
+                span.setAttribute("payment.error", "insufficient_funds");
+                span.setAttribute("payment.balance.sender", sender.getCc() != null ? sender.getCc().getBalance() : 0.0);
+                throw new IllegalArgumentException("Sender has insufficient balance.");
+            }
+
+            // Obtener el estado
             State estado = stateService.findByState(paymentMessage.getState())
-                    .orElseGet(() -> {
-                        LOGGER.warn("⚠ No se encontró estado {}, usando uno por defecto",
-                                paymentMessage.getState());
-                        return stateService.listStates().iterator().next();
+                    .orElseThrow(() -> {
+                        span.setStatus(StatusCode.ERROR, "State not found");
+                        span.setAttribute("payment.error", "state_not_found");
+                        return new IllegalArgumentException("Specified state not found.");
                     });
-            LOGGER.info("✔ Estado usado: {}", estado);
 
             Payment payment = new Payment(
                     paymentMessage.getAmount(),
                     paymentMessage.getDate(),
                     estado,
-                    paymentMessage.getSender(),
-                    paymentMessage.getReceiver()
+                    sender,
+                    receiver
             );
 
             Paymente paymentElas = new Paymente(
-                    paymentMessage.getSender().getId(),
-                    paymentMessage.getSender().getId(),
-                    paymentMessage.getReceiver().getId(),
+                    sender.getId(),
+                    sender.getId(),
+                    receiver.getId(),
                     paymentMessage.getAmount(),
                     paymentMessage.getState(),
                     paymentMessage.getDate()
             );
 
-            LOGGER.info("💾 Insertando en Elasticsearch y MySQL: {}", payment);
+            span.setAttribute("payment.status", "accepted");
+            LOGGER.info("💾 Guardando pago en Elasticsearch y MySQL");
             paymentservice.savePayment(paymentElas);
             paymentRepository.save(payment);
 
         } catch (Exception e) {
-            span.setStatus(StatusCode.ERROR, "Error procesando pago");
+            span.setStatus(StatusCode.ERROR, "Payment processing failed");
             span.recordException(e);
             LOGGER.error("❌ Error insertando pago", e);
         } finally {

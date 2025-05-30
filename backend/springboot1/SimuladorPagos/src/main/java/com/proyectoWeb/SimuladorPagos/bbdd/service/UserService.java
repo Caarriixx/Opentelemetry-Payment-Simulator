@@ -108,29 +108,69 @@ public class UserService {
             span.setAttribute("user.email", user.getEmail());
             span.setAttribute("user.dni", user.getDni());
 
-            Optional<User> existingUser = userRepository.findByEmail(user.getEmail());
-            if (existingUser.isPresent()) {
+            // Validación de email
+            if (user.getEmail() == null || !user.getEmail().contains("@") || !user.getEmail().endsWith(".com")) {
+                span.setStatus(StatusCode.ERROR, "Invalid email format");
+                span.setAttribute("user.registration_error", "invalid_email");
+                throw new IllegalArgumentException("Email must contain '@' and end with '.com'");
+            }
+
+            if (userRepository.findByEmail(user.getEmail()).isPresent()) {
                 span.setStatus(StatusCode.ERROR, "Email already registered");
+                span.setAttribute("user.registration_error", "email_exists");
                 throw new IllegalArgumentException("Email is already registered.");
             }
 
-            if (user.getEmail() == null || user.getPassword() == null) {
-                span.setStatus(StatusCode.ERROR, "Missing data");
-                throw new IllegalArgumentException("Email and password are mandatory.");
+            // Validación de contraseña
+            if (user.getPassword() == null || user.getPassword().isBlank()) {
+                span.setStatus(StatusCode.ERROR, "Password is missing");
+                span.setAttribute("user.registration_error", "missing_password");
+                throw new IllegalArgumentException("Password is mandatory.");
             }
 
+            // Validación de DNI
+            if (user.getDni() == null || !user.getDni().matches("\\d{8}[A-Z]")) {
+                span.setStatus(StatusCode.ERROR, "Invalid DNI format");
+                span.setAttribute("user.registration_error", "invalid_dni");
+                throw new IllegalArgumentException("DNI must have 8 digits followed by an uppercase letter.");
+            }
+
+            // Validación de ID si se asigna manualmente (por seguridad)
+            if (user.getId() != null && (user.getId() <= 0 || userRepository.findById(user.getId()).isPresent())) {
+                span.setStatus(StatusCode.ERROR, "Invalid or duplicate ID");
+                span.setAttribute("user.registration_error", "invalid_or_duplicate_id");
+                throw new IllegalArgumentException("User ID must be a positive integer and not already exist.");
+            }
+
+            // Cifrado de contraseña
             user.setPassword(passwordEncoder.encode(user.getPassword()));
 
+            // Asignación de balance si falta
             if (user.getCc() == null) {
                 user.setCc(new Balance());
             }
 
-            span.setStatus(StatusCode.OK);
-            return userRepository.save(user);
+            // Validación de saldo positivo
+            if (user.getCc().getBalance() < 0) {
+                span.setStatus(StatusCode.ERROR, "Negative balance");
+                span.setAttribute("user.registration_error", "negative_balance");
+                throw new IllegalArgumentException("Initial balance cannot be negative.");
+            }
+
+            // Atributos adicionales de trazabilidad
+            span.setAttribute("user.name", user.getName());
+            span.setAttribute("user.surname", user.getSurname());
+            span.setAttribute("user.balance.initial", user.getCc().getBalance());
+
+            User savedUser = userRepository.save(user);
+            span.setStatus(StatusCode.OK, "User successfully registered");
+            span.setAttribute("user.registration_result", "success");
+            return savedUser;
 
         } catch (Exception e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, "Exception in registerUser");
+            span.setAttribute("user.registration_result", "error");
             throw e;
         } finally {
             span.end();
